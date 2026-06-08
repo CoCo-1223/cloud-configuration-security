@@ -33,7 +33,6 @@ cloud-configuration-security/
 ├── app.py
 ├── demo_mode.py
 ├── requirements.txt
-├── .env.example
 ├── checkers/
 │   ├── checker_iam.py
 │   ├── checker_s3.py
