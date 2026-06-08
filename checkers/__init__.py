@@ -1,0 +1,2 @@
+# checkers 패키지 초기화 파일
+# 이 파일이 있어야 Python이 checkers 폴더를 패키지로 인식합니다.
