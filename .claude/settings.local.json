@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(pip install *)",
-      "Bash(/opt/miniconda3/bin/pip install *)",
-      "Bash(/opt/miniconda3/bin/python3 -c ' *)"
-    ]
-  }
-}

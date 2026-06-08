@@ -7,8 +7,47 @@ Streamlit 대시보드의 '리포트 다운로드' 버튼에서 호출됩니다.
 
 import io
 import datetime
+from pathlib import Path
 import pandas as pd
 from fpdf import FPDF
+
+
+UNICODE_FONT_CANDIDATES = [
+    # 프로젝트 로컬 (어느 OS든 여기 두면 우선 사용)
+    Path("NanumGothic.ttf"),
+    Path("fonts/NanumGothic.ttf"),
+    # macOS 기본 한글 폰트
+    Path("/System/Library/Fonts/Supplemental/AppleGothic.ttf"),
+    Path("/System/Library/Fonts/Supplemental/Arial Unicode.ttf"),
+    Path("/System/Library/Fonts/AppleSDGothicNeo.ttc"),
+    # Windows 기본 한글 폰트
+    Path("C:/Windows/Fonts/malgun.ttf"),    # 맑은 고딕 (Windows 7+)
+    Path("C:/Windows/Fonts/gulim.ttc"),     # 굴림
+    Path("C:/Windows/Fonts/batang.ttc"),    # 바탕
+]
+
+
+def add_unicode_font(pdf: FPDF) -> str:
+    """
+    PDF에서 한글을 출력할 수 있는 유니코드 폰트를 등록합니다.
+
+    fpdf2의 기본 Helvetica/Arial 폰트는 한글을 지원하지 않으므로,
+    프로젝트 폰트 또는 macOS 기본 한글 폰트를 순서대로 시도합니다.
+    """
+    for font_path in UNICODE_FONT_CANDIDATES:
+        if not font_path.exists():
+            continue
+
+        try:
+            pdf.add_font("KoreanFont", "", str(font_path))
+            return "KoreanFont"
+        except Exception:
+            continue
+
+    raise RuntimeError(
+        "한글 PDF 생성을 위한 유니코드 폰트를 찾지 못했습니다. "
+        "NanumGothic.ttf 파일을 프로젝트 루트 또는 fonts/ 폴더에 추가해 주세요."
+    )
 
 
 def results_to_dataframe(results: list[dict]) -> pd.DataFrame:
@@ -44,7 +83,6 @@ def results_to_dataframe(results: list[dict]) -> pd.DataFrame:
 def to_csv_bytes(results: list[dict]) -> bytes:
     """
     점검 결과를 UTF-8 BOM 인코딩 CSV 바이트로 반환합니다.
-    BOM을 포함해야 엑셀에서 한글이 깨지지 않습니다.
 
     Returns
     -------
@@ -74,13 +112,7 @@ def to_pdf_bytes(results: list[dict], score_info: dict) -> bytes:
     pdf.add_page()
 
     # ── 한글 폰트 설정 ───────────────────────────────────────────────────────
-    # NanumGothic 폰트가 없으면 기본 폰트(라틴 전용)를 사용합니다.
-    # 한글 지원이 필요하면 NanumGothic.ttf 를 프로젝트 루트에 복사하세요.
-    try:
-        pdf.add_font("NanumGothic", "", "NanumGothic.ttf", uni=True)
-        font_name = "NanumGothic"
-    except Exception:
-        font_name = "Arial"  # 한글 미지원 폴백
+    font_name = add_unicode_font(pdf)
 
     # ── 표지 ─────────────────────────────────────────────────────────────────
     pdf.set_font(font_name, size=20)
@@ -109,7 +141,7 @@ def to_pdf_bytes(results: list[dict], score_info: dict) -> bytes:
     for r in results:
         # 항목별 박스 출력
         status   = r.get("status", "-")
-        name     = r.get("check_name",  "-")[:60]   # 너무 길면 자름
+        name     = r.get("check_name",  "-")[:60]   
         desc     = r.get("description", "-")[:80]
         fix      = r.get("remediation", "-")[:80]
 
