@@ -32,9 +32,160 @@ from demo_mode         import get_vulnerable_results, get_secure_results
 # ── 페이지 기본 설정 ──────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Cloud Security Checker",
-    page_icon="🛡️",
+    page_icon=":shield:",
     layout="wide",
     initial_sidebar_state="expanded",
+)
+
+st.markdown(
+    """
+    <style>
+    :root {
+        --bg: #f7f8fa;
+        --panel: #ffffff;
+        --line: #dde2e8;
+        --text-muted: #667085;
+        --brand: #1f6feb;
+        --danger: #d92d20;
+        --warning: #b54708;
+        --success: #067647;
+    }
+
+    .stApp {
+        background: var(--bg);
+        color: #1d2939;
+    }
+
+    [data-testid="stSidebar"] {
+        background: #111827;
+        color: #f9fafb;
+    }
+
+    [data-testid="stSidebar"] h1,
+    [data-testid="stSidebar"] h2,
+    [data-testid="stSidebar"] h3,
+    [data-testid="stSidebar"] label,
+    [data-testid="stSidebar"] p,
+    [data-testid="stSidebar"] span {
+        color: #f9fafb;
+    }
+
+    [data-testid="stSidebar"] .stCaption {
+        color: #cbd5e1;
+    }
+
+    h1, h2, h3 {
+        letter-spacing: 0;
+    }
+
+    h1 {
+        font-size: 2.1rem;
+        margin-bottom: 0.35rem;
+    }
+
+    h2 {
+        font-size: 1.35rem;
+        margin-top: 1.4rem;
+    }
+
+    h3 {
+        font-size: 1rem;
+        margin-top: 0.75rem;
+    }
+
+    .section-label {
+        color: var(--text-muted);
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 0.35rem;
+    }
+
+    .hero-copy {
+        color: var(--text-muted);
+        font-size: 1.02rem;
+        line-height: 1.65;
+        max-width: 760px;
+        margin-bottom: 1.25rem;
+    }
+
+    .quiet-panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        margin-bottom: 12px;
+        padding: 18px 20px;
+        min-height: 132px;
+    }
+
+    .quiet-panel strong {
+        display: block;
+        color: #101828;
+        font-size: 0.98rem;
+        margin-bottom: 8px;
+    }
+
+    .quiet-panel span {
+        color: var(--text-muted);
+        font-size: 0.92rem;
+        line-height: 1.55;
+    }
+
+    .callout {
+        background: #eef4ff;
+        border-left: 4px solid var(--brand);
+        border-radius: 6px;
+        color: #344054;
+        padding: 13px 16px;
+        margin: 14px 0 18px;
+    }
+
+    .risk-line {
+        align-items: center;
+        border-bottom: 1px solid var(--line);
+        display: flex;
+        justify-content: space-between;
+        padding: 9px 0;
+    }
+
+    .risk-line:last-child {
+        border-bottom: 0;
+    }
+
+    .risk-line span:first-child {
+        color: #344054;
+        font-weight: 650;
+    }
+
+    .risk-line span:last-child {
+        color: var(--text-muted);
+    }
+
+    .status-critical { color: var(--danger); }
+    .status-high { color: var(--warning); }
+    .status-medium { color: #ca8504; }
+    .status-low { color: var(--success); }
+
+    div.stButton > button,
+    div.stDownloadButton > button {
+        border-radius: 6px;
+        font-weight: 650;
+    }
+
+    div[data-testid="stMetric"] {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 14px 16px;
+    }
+
+    div[data-testid="stMetricLabel"] {
+        color: var(--text-muted);
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
 )
 
 
@@ -43,10 +194,10 @@ st.set_page_config(
 # ══════════════════════════════════════════════════════════════════════════════
 
 with st.sidebar:
-    st.title("🛡️ Security Checker")
+    st.title("Security Checker")
     st.markdown("---")
 
-    st.subheader("🔑 AWS 자격증명 입력")
+    st.subheader("AWS 연결")
 
     # 입력값을 session_state에 저장하면 재실행 시에도 유지됩니다
     access_key = st.text_input(
@@ -71,7 +222,7 @@ with st.sidebar:
     st.markdown("---")
 
     # 점검 항목 선택 (기본값: 전체 선택)
-    st.subheader("📋 점검 항목 선택")
+    st.subheader("점검 범위")
     run_iam = st.checkbox("IAM 계정 보안",        value=True)
     run_s3  = st.checkbox("S3 퍼블릭 접근",       value=True)
     run_sg  = st.checkbox("보안 그룹(방화벽)",     value=True)
@@ -95,22 +246,23 @@ with st.sidebar:
     st.markdown("---")
 
     # 점검 시작 버튼
-    start_btn = st.button("🚀 보안 점검 시작", type="primary", use_container_width=True)
+    start_btn = st.button("보안 점검 시작", type="primary", use_container_width=True)
 
     st.markdown("---")
-    st.caption("ℹ️ 이 툴은 읽기 전용(Read-Only) 권한만 사용합니다.\n설정 변경은 일절 수행하지 않습니다.")
+    st.caption("Read-Only 권한만 사용합니다. 설정 변경 작업은 수행하지 않습니다.")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
 # 메인 화면 헤더
 # ══════════════════════════════════════════════════════════════════════════════
 
-st.title("☁️ Cloud Configuration Security Checker")
+st.markdown('<div class="section-label">AWS account audit</div>', unsafe_allow_html=True)
+st.title("Cloud Configuration Security Checker")
 st.markdown(
-    "AWS 클라우드 계정의 보안 설정을 자동으로 점검하고 "
-    "취약점과 조치 방법을 알려주는 도구입니다."
+    '<div class="hero-copy">AWS 계정의 IAM, S3, Security Group, CloudTrail 설정을 점검하고 '
+    "위험 항목과 조치 내용을 한 화면에서 확인합니다.</div>",
+    unsafe_allow_html=True,
 )
-st.markdown("---")
 
 # 점검 전 기본 화면
 if not start_btn:
@@ -120,39 +272,51 @@ if not start_btn:
     col3.metric("소요 시간", "약 10~30초")
     col4.metric("필요 권한", "Read-Only")
 
-    st.info(
-        "👈 왼쪽 사이드바에 AWS 자격증명을 입력하고 "
-        "**보안 점검 시작** 버튼을 클릭하세요."
+    st.markdown(
+        '<div class="callout">왼쪽 사이드바에서 AWS 자격증명과 점검 범위를 확인한 뒤 보안 점검을 시작하세요.</div>',
+        unsafe_allow_html=True,
     )
 
     # 각 점검 항목 소개 카드
-    st.markdown("### 📖 점검 항목 소개")
+    st.markdown("### 점검 항목")
     c1, c2 = st.columns(2)
     with c1:
-        st.info(
-            "**🔐 IAM 계정 보안**\n\n"
-            "루트 계정 MFA 활성화 여부와 "
-            "패스워드 정책 강도를 점검합니다.\n\n"
-            "> MFA가 없으면 비밀번호 하나로 전체 계정이 탈취됩니다."
+        st.markdown(
+            """
+            <div class="quiet-panel">
+                <strong>IAM 계정 보안</strong>
+                <span>루트 계정 MFA와 패스워드 정책을 확인합니다. 계정 탈취 위험을 줄이는 기본 통제 항목입니다.</span>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
-        st.info(
-            "**🪣 S3 퍼블릭 접근**\n\n"
-            "파일 저장소(버킷)가 인터넷에 "
-            "공개되어 있는지 점검합니다.\n\n"
-            "> 설정 실수 하나로 수백만 개인정보가 유출된 사례가 실제로 있습니다."
+        st.markdown(
+            """
+            <div class="quiet-panel">
+                <strong>S3 퍼블릭 접근</strong>
+                <span>버킷의 Public Access Block과 ACL 상태를 확인해 의도하지 않은 공개 설정을 찾습니다.</span>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
     with c2:
-        st.info(
-            "**🔥 보안 그룹 (방화벽)**\n\n"
-            "EC2 인스턴스의 방화벽 규칙에서 "
-            "위험한 포트가 전 인터넷에 열려 있는지 점검합니다.\n\n"
-            "> SSH/RDP가 전체 공개되면 24시간 해킹 시도 봇에 노출됩니다."
+        st.markdown(
+            """
+            <div class="quiet-panel">
+                <strong>Security Group</strong>
+                <span>SSH, RDP 등 민감한 포트가 전체 인터넷에 열려 있는지 확인합니다.</span>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
-        st.info(
-            "**📋 CloudTrail 로깅**\n\n"
-            "AWS 활동 로그가 정상적으로 "
-            "기록되고 있는지 점검합니다.\n\n"
-            "> 로그가 없으면 침해사고 발생 시 원인 추적이 불가능합니다."
+        st.markdown(
+            """
+            <div class="quiet-panel">
+                <strong>CloudTrail 로깅</strong>
+                <span>Trail 존재 여부, 로깅 활성화, 멀티 리전 설정을 확인해 추적 가능성을 점검합니다.</span>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
     st.stop()  # 점검 전에는 여기서 렌더링 중단
 
@@ -165,16 +329,16 @@ all_results: list[dict] = []
 
 # ── 데모 모드: 가상 결과 사용 ─────────────────────────────────────────────────
 if demo_mode:
-    st.info("🎭 **데모 모드** — 가상의 점검 결과를 표시합니다. (실제 AWS 호출 없음)")
+    st.info("데모 모드: 실제 AWS 호출 없이 가상의 점검 결과를 표시합니다.")
     with st.spinner("점검 시뮬레이션 중..."):
         import time; time.sleep(1.5)  # 실제 점검처럼 약간의 지연 연출
 
     if demo_scenario == "취약한 계정 (문제 상황)":
         all_results = get_vulnerable_results()
-        st.warning("⚠️ 시나리오: 다수의 보안 취약점이 발견된 계정")
+        st.warning("시나리오: 다수의 보안 취약점이 발견된 계정")
     else:
         all_results = get_secure_results()
-        st.success("✅ 시나리오: 모든 보안 설정이 올바른 계정")
+        st.success("시나리오: 모든 보안 설정이 올바른 계정")
 
 # ── 실제 AWS 점검 ─────────────────────────────────────────────────────────────
 else:
@@ -184,16 +348,16 @@ else:
     os.environ["AWS_DEFAULT_REGION"]    = region
 
     # 연결 확인
-    with st.spinner("🔌 AWS 계정 연결 확인 중..."):
+    with st.spinner("AWS 계정 연결 확인 중..."):
         conn = verify_connection()
 
     if not conn["success"]:
-        st.error(f"❌ AWS 연결 실패: {conn['error']}")
+        st.error(f"AWS 연결 실패: {conn['error']}")
         st.info("자격증명을 다시 확인하고 재시도해 주세요.")
         st.stop()
 
     st.success(
-        f"✅ AWS 연결 성공 | 계정: `{conn['account_id']}` | "
+        f"AWS 연결 성공 | 계정: `{conn['account_id']}` | "
         f"리전: `{region}` | 시각: {datetime.datetime.now().strftime('%H:%M:%S')}"
     )
 
@@ -215,7 +379,7 @@ else:
         progress_bar.progress(85, text="CloudTrail 로깅 점검 중...")
         all_results.extend(checker_cloudtrail.run_all_checks())
 
-    progress_bar.progress(100, text="✅ 점검 완료!")
+    progress_bar.progress(100, text="점검 완료")
 
 if not all_results:
     st.warning("점검 항목을 하나 이상 선택해 주세요.")
@@ -229,7 +393,7 @@ score_info = calculate_score(all_results)
 # 보안 점수 대시보드
 # ══════════════════════════════════════════════════════════════════════════════
 
-st.markdown("## 📊 보안 점수")
+st.markdown("## 보안 점수")
 
 col_gauge, col_summary = st.columns([1, 2])
 
@@ -287,11 +451,11 @@ with col_summary:
         f"{score_info['grade']} ({score_info['grade_label']})",
     )
     m3.metric(
-        "✅ 통과",
+        "통과",
         f"{score_info['pass_count']}개",
     )
     m4.metric(
-        "❌ 실패/경고",
+        "실패/경고",
         f"{score_info['fail_count']}개",
         delta=f"-{score_info['fail_count']}" if score_info['fail_count'] > 0 else None,
         delta_color="inverse",
@@ -309,19 +473,22 @@ with col_summary:
             severity_counts[sev] = severity_counts.get(sev, 0) + 1
 
     if severity_counts:
-        # 색상 매핑
         sev_colors = {
-            "CRITICAL": "🔴",
-            "HIGH":     "🟠",
-            "MEDIUM":   "🟡",
-            "LOW":      "🟢",
+            "CRITICAL": "status-critical",
+            "HIGH":     "status-high",
+            "MEDIUM":   "status-medium",
+            "LOW":      "status-low",
         }
         for sev in ["CRITICAL", "HIGH", "MEDIUM", "LOW"]:
             if sev in severity_counts:
-                icon = sev_colors.get(sev, "⚪")
-                st.markdown(f"{icon} **{sev}**: {severity_counts[sev]}개")
+                css_class = sev_colors.get(sev, "")
+                st.markdown(
+                    f'<div class="risk-line"><span class="{css_class}">{sev}</span>'
+                    f"<span>{severity_counts[sev]}개</span></div>",
+                    unsafe_allow_html=True,
+                )
     else:
-        st.success("🎉 모든 항목이 정상입니다!")
+        st.success("모든 항목이 정상입니다.")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -329,7 +496,7 @@ with col_summary:
 # ══════════════════════════════════════════════════════════════════════════════
 
 st.markdown("---")
-st.markdown("## 📋 점검 결과 상세")
+st.markdown("## 점검 결과 상세")
 
 # 상태 필터 선택
 status_filter = st.multiselect(
@@ -343,28 +510,14 @@ status_filter = st.multiselect(
 filtered = [r for r in all_results if r["status"] in status_filter] if status_filter else all_results
 
 if not filtered:
-    st.success("🎉 선택한 상태에 해당하는 항목이 없습니다.")
+    st.success("선택한 상태에 해당하는 항목이 없습니다.")
 else:
-    # 상태별 이모지/색상 맵
-    STATUS_ICON = {
-        "PASS":  "✅",
-        "FAIL":  "❌",
-        "WARN":  "⚠️",
-        "ERROR": "🔧",
-    }
-    SEVERITY_ICON = {
-        "CRITICAL": "🔴",
-        "HIGH":     "🟠",
-        "MEDIUM":   "🟡",
-        "LOW":      "🟢",
-    }
-
     # 테이블 데이터 구성
     table_data = []
     for r in filtered:
         table_data.append({
-            "상태":      STATUS_ICON.get(r["status"], r["status"]) + " " + r["status"],
-            "심각도":    SEVERITY_ICON.get(r["severity"], "") + " " + r["severity"],
+            "상태":      r["status"],
+            "심각도":    r["severity"],
             "점검 항목": r["check_name"],
             "설명":      r["description"],
         })
@@ -381,25 +534,22 @@ fail_items = [r for r in all_results if r["status"] in ("FAIL", "WARN")]
 
 if fail_items:
     st.markdown("---")
-    st.markdown("## 🔧 조치 가이드")
-    st.markdown("발견된 취약점의 해결 방법입니다. 각 항목을 클릭하면 상세 내용을 확인할 수 있습니다.")
+    st.markdown("## 조치 가이드")
+    st.markdown("문제가 발견된 항목의 조치 방법입니다.")
 
     for item in fail_items:
-        icon = "❌" if item["status"] == "FAIL" else "⚠️"
-        sev  = SEVERITY_ICON.get(item["severity"], "")
-
         # expander: 접었다 펼 수 있는 UI 컴포넌트
-        with st.expander(f"{icon} {sev} {item['check_name']}"):
+        with st.expander(f"{item['severity']} · {item['check_name']}"):
             st.markdown(f"**문제 설명:** {item['description']}")
             st.markdown(f"**상세 내용:** `{item['detail']}`")
 
             # 심각도에 따른 강조 스타일
             if item["severity"] == "CRITICAL":
-                st.error(f"🚨 **즉각 조치 필요:** {item['remediation']}")
+                st.error(f"즉각 조치 필요: {item['remediation']}")
             elif item["severity"] == "HIGH":
-                st.warning(f"⚠️ **조기 조치 권고:** {item['remediation']}")
+                st.warning(f"조기 조치 권고: {item['remediation']}")
             else:
-                st.info(f"ℹ️ **조치 권고:** {item['remediation']}")
+                st.info(f"조치 권고: {item['remediation']}")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -407,7 +557,7 @@ if fail_items:
 # ══════════════════════════════════════════════════════════════════════════════
 
 st.markdown("---")
-st.markdown("## 📥 리포트 다운로드")
+st.markdown("## 리포트 다운로드")
 
 now_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 
@@ -417,7 +567,7 @@ with col_csv:
     # CSV 다운로드 버튼
     csv_bytes = to_csv_bytes(all_results)
     st.download_button(
-        label="📊 CSV 다운로드 (엑셀 호환)",
+        label="CSV 다운로드",
         data=csv_bytes,
         file_name=f"security_report_{now_str}.csv",
         mime="text/csv",
@@ -429,7 +579,7 @@ with col_pdf:
     try:
         pdf_bytes = to_pdf_bytes(all_results, score_info)
         st.download_button(
-            label="📄 PDF 다운로드",
+            label="PDF 다운로드",
             data=pdf_bytes,
             file_name=f"security_report_{now_str}.pdf",
             mime="application/pdf",
@@ -445,7 +595,7 @@ with col_pdf:
 
 st.markdown("---")
 st.caption(
-    "🛡️ Cloud Configuration Security Checker | "
+    "Cloud Configuration Security Checker | "
     "Python 프로그래밍 기말 프로젝트 | "
     "이 툴은 읽기 전용 작업만 수행하며 설정 변경을 하지 않습니다."
 )
